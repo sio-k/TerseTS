@@ -80,10 +80,11 @@ pub fn decompress(allocator: Allocator, compressed_values: []const u8, decompres
     var index: usize = 0;
     while (index < compressed_representation.len) : (index += 2) {
         const value: f64 = compressed_representation[index];
-        const count: usize = @bitCast(compressed_representation[index + 1]);
+        const count: u64 = @bitCast(compressed_representation[index + 1]);
 
         // Append the value `count` times to the decompressed values.
-        for (0..count) |_| {
+        var i: u64 = 0;
+        while (i < count) : (i += 1) {
             try decompressed_values.append(allocator, value);
         }
     }

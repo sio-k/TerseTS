@@ -165,11 +165,12 @@ pub fn decompress(
     var uncompressed_index: usize = 0;
     while (compressed_index < compressed_values_and_index.len) : (compressed_index += 2) {
         const value = compressed_values_and_index[compressed_index];
-        const index: usize = @bitCast(compressed_values_and_index[compressed_index + 1]);
-        for (uncompressed_index..index) |_| {
+        const index: u64 = @bitCast(compressed_values_and_index[compressed_index + 1]);
+        var i: u64 = uncompressed_index;
+        while (i < index) : (i += 1) {
             try decompressed_values.append(allocator, value);
         }
-        uncompressed_index = index;
+        uncompressed_index = @truncate(index); // NOTE (sio): unintended behavior on 32-bit platforms on arrays larger than UINT32_MAX elements
     }
 }
 

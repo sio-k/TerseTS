@@ -61,17 +61,15 @@ pub fn computeRMSE(uncompressed_values: []const f64, seg_start: usize, seg_end: 
 
 /// Append `value` of `type` determined at compile time to `compressed_values`.
 pub fn appendValue(allocator: Allocator, comptime T: type, value: T, compressed_values: *ArrayList(u8)) !void {
-    // Compile-time type check
-    switch (@TypeOf(value)) {
-        u64, i64, f64, usize => {
-            const value_as_bytes: [8]u8 = @bitCast(value);
-            try compressed_values.appendSlice(allocator, value_as_bytes[0..]);
-        },
-        u32, i32, f32 => {
-            const value_as_bytes: [4]u8 = @bitCast(value);
-            try compressed_values.appendSlice(allocator, value_as_bytes[0..]);
-        },
-        else => @compileError("Unsupported type for append value function"),
+    // NOTE (sio): now works with arbitrary types rather than only specific 32-bit or 64-bit types
+    if (T != usize) {
+        const value_as_bytes: [@sizeOf(T)]u8 = @bitCast(value);
+        try compressed_values.appendSlice(allocator, value_as_bytes[0..]);
+    } else {
+        // NOTE (sio): treat usize as a u64 to preserve compatibility between
+        // 32-bit and 64-bit platforms, as TerseTS implicitly expects
+        // @sizeOf(usize) == @sizeOf(u64) == @sizeOf(f64)
+        try appendValue(allocator, u64, @intCast(value), compressed_values);
     }
 }
 
@@ -84,7 +82,8 @@ pub fn appendValueAndIndexToArrayList(
 ) !void {
     const valueAsBytes: [8]u8 = @bitCast(compressed_value);
     try compressed_values.appendSlice(allocator, valueAsBytes[0..]);
-    const indexAsBytes: [8]u8 = @bitCast(index); // No -1 due to 0 indexing.
+    // NOTE (sio): this whole thing does fuckall on 64-bit, but is necessary on 32-bit platforms to get a 64-bit index out of a 32-bit usize
+    const indexAsBytes: [8]u8 = @bitCast(@as(u64, @intCast(index))); // No -1 due to 0 indexing.
     try compressed_values.appendSlice(allocator, indexAsBytes[0..]);
 }
 

@@ -198,7 +198,7 @@ pub fn decompress(allocator: Allocator, compressed_values: []const u8, decompres
     while (index < compressed_lines_and_index.len) : (index += 3) {
         const start_point = .{ .time = first_timestamp, .value = compressed_lines_and_index[index] };
         const end_point = .{
-            .time = @as(usize, @bitCast(compressed_lines_and_index[index + 2])),
+            .time = @as(usize, @truncate(@as(u64, @bitCast(compressed_lines_and_index[index + 2])))), // NOTE (sio): potential issues on 32-bit platforms due to usize/u64 size mismatch
             .value = compressed_lines_and_index[index + 1],
         };
 

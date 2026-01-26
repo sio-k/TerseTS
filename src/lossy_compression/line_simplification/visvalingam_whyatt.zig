@@ -196,7 +196,7 @@ pub fn decompress(allocator: Allocator, compressed_values: []const u8, decompres
     while (index < compressed_lines_and_index.len - 1) : (index += 2) {
         // index + 1 is the end value and index + 2 is the end time.
         const end_point: DiscretePoint = .{
-            .time = @as(usize, @bitCast(compressed_lines_and_index[index + 2])),
+            .time = @as(usize, @truncate(@as(u64, @bitCast(compressed_lines_and_index[index + 2])))), // NOTE (sio): potential issues on 32-bit platforms due to u64/usize mismatch
             .value = compressed_lines_and_index[index + 1],
         };
 

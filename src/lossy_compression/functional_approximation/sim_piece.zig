@@ -124,18 +124,20 @@ pub fn decompress(
     var compressed_index: usize = 0;
     while (compressed_index < compressed_lines_and_index.len - 1) {
         const intercept: f64 = compressed_lines_and_index[compressed_index];
-        const slopes_count = @as(usize, @bitCast(compressed_lines_and_index[compressed_index + 1]));
+        const slopes_count = @as(u64, @bitCast(compressed_lines_and_index[compressed_index + 1]));
         compressed_index += 2;
 
-        for (0..slopes_count) |_| {
+        var i: u64 = 0;
+        while (i < slopes_count) : (i += 1) {
             const slope = compressed_lines_and_index[compressed_index];
-            const timestamps_count = @as(usize, @bitCast(compressed_lines_and_index[compressed_index + 1]));
+            const timestamps_count = @as(u64, @bitCast(compressed_lines_and_index[compressed_index + 1]));
             compressed_index += 2;
-            var timestamp: usize = 0;
-            for (0..timestamps_count) |_| {
-                timestamp += @as(usize, @bitCast(compressed_lines_and_index[compressed_index]));
+            var timestamp: u64 = 0;
+            var t: u64 = 0;
+            while (t < timestamps_count) : (t += 1) {
+                timestamp += @as(u64, @bitCast(compressed_lines_and_index[compressed_index]));
                 try segments_metadata.append(allocator, .{
-                    .start_time = timestamp,
+                    .start_time = @truncate(timestamp), // NOTE (sio): potential unintended behavior on 32-bit platforms due to u64/usize size mismatch
                     .intercept = intercept,
                     .lower_bound_slope = slope,
                     .upper_bound_slope = slope,
@@ -145,7 +147,7 @@ pub fn decompress(
         }
     }
 
-    const last_timestamp: usize = @as(usize, @bitCast(compressed_lines_and_index[compressed_index]));
+    const last_timestamp = @as(u64, @bitCast(compressed_lines_and_index[compressed_index]));
 
     mem.sort(
         shared_structs.SegmentMetadata,
@@ -173,7 +175,7 @@ pub fn decompress(
         allocator,
         current_metadata,
         current_timestamp,
-        last_timestamp,
+        @truncate(last_timestamp), // NOTE (sio): potential unintended behavior on 32-bit platforms due to usize/u64 size mismatch
         decompressed_values,
     );
 }

@@ -192,14 +192,15 @@ pub fn decompress(
 
     const fields = mem.bytesAsSlice(f64, compressed_values);
     var field_index: usize = 0;
-    var segment_start: usize = 0;
+    var segment_start: u64 = 0;
 
     while (field_index + 2 < fields.len) : (field_index += 3) {
         const slope = fields[field_index];
         const intercept = fields[field_index + 1];
-        const segment_end = @as(usize, @bitCast(fields[field_index + 2]));
+        const segment_end = @as(u64, @bitCast(fields[field_index + 2]));
         if (segment_start + 1 != segment_end) {
-            for (segment_start..segment_end + 1) |t| {
+            var t: u64 = segment_start;
+            while (t < segment_end + 1) : (t += 1) {
                 const x = @as(f64, @floatFromInt(t));
                 const y = slope * x + intercept;
                 try decompressed_values.append(allocator, y);

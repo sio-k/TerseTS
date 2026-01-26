@@ -175,11 +175,12 @@ pub fn decompressPWCH(
     var uncompressed_index: usize = 0;
     while (compressed_index < compressed_values_and_index.len) : (compressed_index += 2) {
         const value = compressed_values_and_index[compressed_index];
-        const index: usize = @bitCast(compressed_values_and_index[compressed_index + 1]);
-        for (uncompressed_index..index) |_| {
+        const index: u64 = @bitCast(compressed_values_and_index[compressed_index + 1]);
+        var i: u64 = uncompressed_index;
+        while (i < index) : (i += 1) {
             try decompressed_values.append(allocator, value);
         }
-        uncompressed_index = index;
+        uncompressed_index = @truncate(index); // NOTE (sio): no-op on 64-bit platforms, potential issues on 32-bit platforms with large arrays (larger than USIZE_MAX)
     }
 }
 
@@ -204,7 +205,7 @@ pub fn decompressPWLH(
         const current_segment: Segment = .{
             .start_point = .{ .time = first_timestamp, .value = compressed_lines_and_index[index] },
             .end_point = .{
-                .time = @as(usize, @bitCast(compressed_lines_and_index[index + 2])) - 1,
+                .time = @as(usize, @truncate(@as(u64, @bitCast(compressed_lines_and_index[index + 2])))) - 1, // NOTE (sio): potential issues on 32-bit platforms due to usize/u64 size mismatch
                 .value = compressed_lines_and_index[index + 1],
             },
         };

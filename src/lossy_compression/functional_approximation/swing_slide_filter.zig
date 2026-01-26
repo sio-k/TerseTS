@@ -722,7 +722,7 @@ pub fn decompressSwingFilter(
         const current_segment: Segment = .{
             .start_point = start_point,
             .end_point = .{
-                .time = @as(usize, @bitCast(compressed_lines_and_index[index + 2])) - 1,
+                .time = @as(usize, @truncate(@as(u64, @bitCast(compressed_lines_and_index[index + 2])))) - 1, // NOTE (sio): potential issues on 32-bit platforms, no truncation on 64-bit
                 .value = compressed_lines_and_index[index + 1],
             },
         };
@@ -777,7 +777,7 @@ pub fn decompressSlideFilter(
         const current_segment: Segment = .{
             .start_point = .{ .time = first_timestamp, .value = compressed_lines_and_index[index] },
             .end_point = .{
-                .time = @as(usize, @bitCast(compressed_lines_and_index[index + 2])) - 1,
+                .time = @as(usize, @truncate(@as(u64, @bitCast(compressed_lines_and_index[index + 2])))) - 1, // NOTE (sio): see above note, same issue
                 .value = compressed_lines_and_index[index + 1],
             },
         };
